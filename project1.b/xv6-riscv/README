@@ -1,0 +1,22 @@
+Kaden Wingert
+
+Description:
+This assignment involves modifying the xv6 operating system kernel to add new system calls and implementing their functionality. The tasks include adding system calls to retrieve the parent process ID, retrieve process information, and retrieve scheduling history.
+
+Adding System Calls on the Kernel Side: Modify various kernel files (syscall.h, syscall.c, proc.h, proc.c, trap.c, sysproc.c) to add and implement the new system calls.
+Adding System Calls on the User Side: Update user-side files (usys.pl, user.h) to declare the new system calls
+
+Files Modified/Added:
+Makefile to accept the new broadcast-1B.c file
+broadcast-1B.c (this is where I tested this project since I left the original broadcast.c in the project)
+
+kernel/syscall.h
+kernel/syscall.c
+kernel/proc.h
+kernel/proc.c to increment the new fields in the proc struct which is used in getschedhistory()
+
+user/usys.pl
+user/user.h
+kernel/trap.c to increment the new fields in the proc struct which is used in getschedhistory()
+
+kernel/sysproc.c this is where the main functions that I added exist (sys_getppid, sys_ps, and sys_getschedhistory)

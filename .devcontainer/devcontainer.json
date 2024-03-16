@@ -1,0 +1,6 @@
+{
+  "name": "coms352-dockerized-os",
+  "build": {
+    "dockerfile": "Dockerfile"
+  }
+}

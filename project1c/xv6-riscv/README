@@ -1,0 +1,15 @@
+Kaden Wingert
+
+Description:
+This assignment involves creating a MLFQ scheduler as a way for the OS to delegate which proccess gets to run next
+
+
+Files Modified/Added:
+
+Makefile - to accept the testsyscall file
+
+kernel/proc.h - declared startMLFQ, stopMLFQ, and getMLFQInfo as well as struct MLFQInfoReport
+kernel/proc.c - implemented functions sys_startMLFQ, sys_stopMLFQ and sys_getMLFQInfo. Altered schedular(void){} function to include the MLFQ_Schedular
+
+user/usyl.pl - added the entries for startMLFQ, stopMLFQ and getMLFQInfo
+user/user.h - declared the signatures for startMLFQ, stopMLFQ and getMLFQInfo as well as struct MLFQInfoReport
