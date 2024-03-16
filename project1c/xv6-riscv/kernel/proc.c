@@ -569,7 +569,7 @@ void MLFQ_scheduler(struct cpu *c) {
         }
 
         // Rule 4: Once a process uses up its time quantum at its current priority level, its priority is degraded
-        // (i.e., its priority number is incremented by one and it moves down one queue) if its priority number is not MLFQ_MAX_LEVEL - 1 yet.
+        // (i.e. its priority number is incremented by one and it moves down one queue...if its priority number is not MLFQ_MAX_LEVEL - 1 yet.)
         if (p != 0 && p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
             if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
                 p->mlfqInfo.priority++;
