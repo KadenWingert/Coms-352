@@ -103,6 +103,13 @@ extern uint64 sys_getppid(void);
 extern uint64 sys_ps(void);
 extern uint64 sys_getschedhistory(void);
 
+// Prototypes for the MLFQ scheduler system calls
+extern int sys_startMLFQ(int m, int n);
+extern int sys_stopMLFQ(void);
+extern int sys_getMLFQInfo(struct MLFQInfoReport *report);
+
+
+
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
@@ -132,6 +139,12 @@ static uint64 (*syscalls[])(void) = {
     [SYS_getppid] sys_getppid,
     [SYS_ps] sys_ps,
     [SYS_getschedhistory] sys_getschedhistory,
+
+    //Adding the functions for the array mapping to the function that handles the system call
+    [SYS_startMLFQ] (void*)startMLFQ,
+    [SYS_stopMLFQ] (void*)stopMLFQ,
+    [SYS_getMLFQInfo] (void*)getMLFQInfo,
+
 };
 
 void syscall(void)

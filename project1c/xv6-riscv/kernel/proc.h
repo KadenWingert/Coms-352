@@ -99,9 +99,6 @@ enum procstate
   ZOMBIE
 };
 
-
-
-
 // MLFQ scheduler functions
 void MLFQ_scheduler(struct cpu *c);
 void RR_scheduler(struct cpu *c);
@@ -123,8 +120,6 @@ int startMLFQ(int m, int n);
 int stopMLFQ();
 int getMLFQInfo(struct MLFQInfoReport *report);
 
-
-
 // MLFQ queue element
 struct mlfqQueueElement {
     struct proc *proc; // Pointer to process
@@ -137,13 +132,8 @@ struct mlfqQueue {
     struct mlfqQueueElement *head; // Head element of the queue
 };
 
-// Define maximum number of MLFQ levels
-#define MLFQ_MAX_LEVEL 10
-
 // Declare MLFQ queues globally
 extern struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
-
-
 
 // Function declarations
 void mlfq_enque(struct mlfqQueue *queue, struct proc *proc);

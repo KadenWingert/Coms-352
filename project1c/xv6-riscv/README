@@ -12,6 +12,8 @@ kernel/proc.h - declared startMLFQ, stopMLFQ, and getMLFQInfo as well as MLFQ sc
 kernel/proc.c - implemented functions sys_startMLFQ, sys_stopMLFQ and sys_getMLFQInfo. Altered schedular(void){} function to include the MLFQ_Schedular
 as well as the RR schedular which was derived from the original schedular function. I also imlemented the functions enqueue, dequeue, adn delete for the queue 
 data structure
+kernnel/syscall.c - Added the functions for the array mapping to the function that handles the system call as well as add the prototypes for these MLFQ scheduler system calls
+kernel/syscall.h - Added unique system call number identifiers for the MLFQ scheduler functions sys_startMLFQ, sys_stopMLFQ and sys_getMLFQInfo
 
 user/usyl.pl - added the entries for startMLFQ, stopMLFQ and getMLFQInfo
 user/user.h - declared the signatures for startMLFQ, stopMLFQ and getMLFQInfo as well as struct MLFQInfoReport

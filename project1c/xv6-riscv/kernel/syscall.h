@@ -28,7 +28,7 @@
 #define SYS_getschedhistory 24
 
 // Added unique system call number identifiers
-#define SYS_startMLFQ 22
-#define SYS_stopMLFQ 23
-#define SYS_getMLFQInfo 24
+#define SYS_startMLFQ 25
+#define SYS_stopMLFQ 26
+#define SYS_getMLFQInfo 27
 
