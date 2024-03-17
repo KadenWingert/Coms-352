@@ -8,8 +8,10 @@ Files Modified/Added:
 
 Makefile - to accept the testsyscall file
 
-kernel/proc.h - declared startMLFQ, stopMLFQ, and getMLFQInfo as well as struct MLFQInfoReport
+kernel/proc.h - declared startMLFQ, stopMLFQ, and getMLFQInfo as well as MLFQ schedular, RR schedular, and everything relateed to the queue structure
 kernel/proc.c - implemented functions sys_startMLFQ, sys_stopMLFQ and sys_getMLFQInfo. Altered schedular(void){} function to include the MLFQ_Schedular
+as well as the RR schedular which was derived from the original schedular function. I also imlemented the functions enqueue, dequeue, adn delete for the queue 
+data structure
 
 user/usyl.pl - added the entries for startMLFQ, stopMLFQ and getMLFQInfo
 user/user.h - declared the signatures for startMLFQ, stopMLFQ and getMLFQInfo as well as struct MLFQInfoReport

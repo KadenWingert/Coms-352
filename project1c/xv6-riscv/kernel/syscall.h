@@ -26,3 +26,9 @@
 #define SYS_getppid 22
 #define SYS_ps 23
 #define SYS_getschedhistory 24
+
+// Added unique system call number identifiers
+#define SYS_startMLFQ 22
+#define SYS_stopMLFQ 23
+#define SYS_getMLFQInfo 24
+

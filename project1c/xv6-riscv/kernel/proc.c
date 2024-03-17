@@ -465,6 +465,91 @@ int wait(uint64 addr)
   }
 }
 
+int mlfqFlag;  // Define mlfqFlag
+struct { 
+    int m; // Number of priority levels 
+    int n; // Max number of ticks a process can stay at priority level m-1 before being boosted to 0 
+} mlfqParams;  // Define mlfqParams
+
+
+
+
+// Function to insert a process into the MLFQ queue
+void mlfq_enque(struct mlfqQueue *queue, struct proc *proc) {
+    struct mlfqQueueElement *newElement = (struct mlfqQueueElement *) kalloc();
+    if (newElement == 0) {
+        return; // Allocation failed
+    }
+    newElement->proc = proc;
+    newElement->next = 0;
+    newElement->prev = 0;
+
+    // Check if the queue is empty
+    if (queue->head == 0) {
+        queue->head = newElement;
+        return;
+    }
+
+    // Find the tail of the queue
+    struct mlfqQueueElement *tail = queue->head;
+    while (tail->next != 0) {
+        tail = tail->next;
+    }
+
+    // Insert the new element at the end
+    tail->next = newElement;
+    newElement->prev = tail;
+}
+
+// Function to remove and return the first process from the MLFQ queue
+struct proc *mlfq_deque(struct mlfqQueue *queue) {
+    if (queue->head == 0) {
+        return 0; // Queue is empty
+    }
+
+    // Get the first element
+    struct mlfqQueueElement *firstElement = queue->head;
+    struct proc *firstProc = firstElement->proc;
+
+    // Update the head of the queue
+    queue->head = firstElement->next;
+    if (queue->head != 0) {
+        queue->head->prev = 0;
+    }
+
+    // Free the dequeued element
+    kfree((char *) firstElement);
+
+    return firstProc;
+}
+
+// Function to delete a specific process from the MLFQ queue
+void mlfq_delete(struct mlfqQueue *queue, struct proc *proc) {
+    if (queue->head == 0) {
+        return; // Queue is empty
+    }
+
+    struct mlfqQueueElement *current = queue->head;
+    while (current != 0) {
+        if (current->proc == proc) {
+            // Found the process, delete it from the queue
+            if (current->prev == 0) {
+                // Process is at the head of the queue
+                queue->head = current->next;
+            } else {
+                current->prev->next = current->next;
+            }
+            if (current->next != 0) {
+                current->next->prev = current->prev;
+            }
+            kfree((char *) current);
+            return;
+        }
+        current = current->next;
+    }
+}
+
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -490,9 +575,6 @@ RR_scheduler(c);
 }
 }
 
-
-
-
 //Constructed from the existing scheduler 
 void
 RR_scheduler(struct cpu *c)
@@ -516,7 +598,7 @@ release(&p->lock);
 }
 
 
-//Implemented the new MLFQ scheduler
+// MLFQ scheduler function
 void MLFQ_scheduler(struct cpu *c) {
     struct proc *p = 0; // p is the process scheduled to run; initially it is none
 
@@ -535,18 +617,21 @@ void MLFQ_scheduler(struct cpu *c) {
 
         // Rule 3: Run the selected process with a time quantum of 2*(priority + 1) ticks
         if (p->state == RUNNABLE || p->state == RUNNING) {
-            // Increment the tick count of p on the current queue
-            // To be added
-
             // Check if p's time quantum for the current queue expires or not
             if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
-                // Update p's running history accordingly
-                // To be added
-
                 // Move p to the queue below it (if p is not at the bottom queue yet)
                 if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
-                    p->mlfqInfo.priority++;
+                    // Move the process to the next lower priority queue
+                    struct mlfqQueue *lowerQueue = &mlfqQueues[p->mlfqInfo.priority + 1];
+                    mlfq_enque(lowerQueue, p);
                 }
+
+                // Remove p from its current queue
+                struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
+                mlfq_delete(currentQueue, p);
+
+                // Reset ticks for the current priority level
+                p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
 
                 // Set p to 0 (to indicate another process should be found to run next)
                 p = 0;
@@ -578,6 +663,8 @@ void MLFQ_scheduler(struct cpu *c) {
     }
 }
 
+// Define MLFQ queues globally
+struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
 
 // System call to start MLFQ scheduler
 int startMLFQ(int m, int n) {
@@ -591,6 +678,10 @@ int startMLFQ(int m, int n) {
     mlfqParams.m = m; // Set number of priority levels
     mlfqParams.n = n; // Set maximum ticks at priority m-1 before boosting to 0
     
+        for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
+        mlfqQueues[i].head = 0; // Initialize head pointer to NULL for each queue
+    }
+
     return 0; // Success
 }
 
@@ -630,11 +721,6 @@ int getMLFQInfo(struct MLFQInfoReport *report) {
 
     return 0; // Success
 }
-
-
-
-
-
 
 
 // Switch to scheduler.  Must hold only p->lock

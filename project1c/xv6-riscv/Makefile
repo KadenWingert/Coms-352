@@ -140,7 +140,7 @@ UPROGS=\
 	$U/_broadcast\
 	$U/_unicast\
 	$U/_broadcast-1B\
-	$U/testsyscall\ #added this to be able to run the test file
+	$U/_testsyscall #added this to be able to run the test file
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

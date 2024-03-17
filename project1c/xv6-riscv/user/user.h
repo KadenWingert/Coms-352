@@ -61,3 +61,22 @@ struct sched_history
     int sleepCount;
 };
 int getschedhistory(char *history);
+
+
+
+// Define struct MLFQInfoReport
+#define MLFQ_MAX_LEVEL 10
+
+struct MLFQInfoReport {
+    int addedToMLFQ;                    // Flag indicating if process is added to MLFQ queue
+    int priority;                       // Current priority of the process
+    int ticks[MLFQ_MAX_LEVEL];          // Ticks the process has run at each priority level
+    int ticksAtMaxPriority;             // Ticks the process has stayed at priority m-1
+    int tickCounts[MLFQ_MAX_LEVEL];     // Add tickCounts member
+};
+
+// Declare system call prototypes
+int startMLFQ(int m, int n);
+int stopMLFQ();
+int getMLFQInfo(struct MLFQInfoReport *report);
+

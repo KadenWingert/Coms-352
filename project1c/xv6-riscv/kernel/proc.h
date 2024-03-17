@@ -124,14 +124,6 @@ int stopMLFQ();
 int getMLFQInfo(struct MLFQInfoReport *report);
 
 
-// MLFQ scheduler parameters
-struct {
-    int m; // Number of priority levels
-    int n; // Max number of ticks a process can stay at priority level m-1 before being boosted to 0
-} mlfqParams;
-
-// Flag to indicate if MLFQ scheduler should be running
-int mlfqFlag;
 
 // MLFQ queue element
 struct mlfqQueueElement {
@@ -140,10 +132,23 @@ struct mlfqQueueElement {
     struct mlfqQueueElement *prev; // Pointer to previous element
 };
 
-// MLFQ queue
+// MLFQ queue structure
 struct mlfqQueue {
     struct mlfqQueueElement *head; // Head element of the queue
 };
+
+// Define maximum number of MLFQ levels
+#define MLFQ_MAX_LEVEL 10
+
+// Declare MLFQ queues globally
+extern struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
+
+
+
+// Function declarations
+void mlfq_enque(struct mlfqQueue *queue, struct proc *proc);
+struct proc *mlfq_deque(struct mlfqQueue *queue);
+void mlfq_delete(struct mlfqQueue *queue, struct proc *proc);
 
 
 

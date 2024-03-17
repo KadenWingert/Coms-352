@@ -1,14 +1,12 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
-
 void
 panic(char *s)
 {
   fprintf(2, "%s\n", s);
   exit(1);
 }
-
 int
 fork1(void)
 {
@@ -18,10 +16,6 @@ fork1(void)
     panic("fork");
   return pid;
 }
-
-
-
-
 int
 main(int argc, char*argv[])
 {
@@ -60,7 +54,6 @@ main(int argc, char*argv[])
 		  if(ret==0) break;
 	  }
 	
-
     //computation task
 	  int t=0;
 	  while(t++<workload){
@@ -95,7 +88,3 @@ main(int argc, char*argv[])
 
 	  return 0;
 }
-
-
-
-

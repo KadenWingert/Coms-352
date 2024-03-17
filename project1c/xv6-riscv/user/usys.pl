@@ -42,3 +42,10 @@ entry("uptime");
 entry("getppid");
 entry("ps");
 entry("getschedhistory");
+
+
+# Added entries for the implemented functions so the Perl script
+# would auto generate the assembly code
+entry("startMLFQ");
+entry("stopMLFQ");
+entry("getMLFQInfo");
