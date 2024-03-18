@@ -150,6 +150,16 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+      // Initialize MLFQ info
+    p->mlfqInfo.addedToMLFQ = 0; // Not added to MLFQ queue initially
+    p->mlfqInfo.priority = 0;    // Start with priority 0
+    p->mlfqInfo.ticksAtMaxPriority = 0; // No ticks at max priority initially
+    for (int i = 0; i < MLFQ_MAX_LEVEL; i++)
+    {
+        p->mlfqInfo.ticks[i] = 0; // Set ticks at each priority level to 0
+        p->mlfqInfo.tickCounts[i] = 0;
+    }
+
   return p;
 }
 
@@ -183,12 +193,13 @@ freeproc(struct proc *p)
   p->sleepCount = 0;
 
 
-    // Initialize additional fields for MLFQ process information
+    // fields fields for MLFQ process information
     p->mlfqInfo.addedToMLFQ = 0;                   // Not added to MLFQ queue initially
     p->mlfqInfo.priority = 0;                      // Start with priority 0
     p->mlfqInfo.ticksAtMaxPriority = 0;            // No ticks at max priority initially
     for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
-        p->mlfqInfo.ticks[i] = 0;                  // Initialize ticks at each priority level to 0
+        p->mlfqInfo.ticks[i] = 0;                  // set ticks at each priority level to 0
+        p->mlfqInfo.tickCounts[i] = 0;
     }
 }
 
@@ -465,11 +476,15 @@ int wait(uint64 addr)
   }
 }
 
-int mlfqFlag;  // Define mlfqFlag
+int mlfqFlag = 0; // Define and initialize the flag
+
 struct { 
     int m; // Number of priority levels 
     int n; // Max number of ticks a process can stay at priority level m-1 before being boosted to 0 
-} mlfqParams;  // Define mlfqParams
+} mlfqParams;
+
+// Declare MLFQ queues globally
+struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
 
 // Function to insert a process into the MLFQ queue
 void mlfq_enque(struct mlfqQueue *queue, struct proc *proc) {
@@ -556,20 +571,19 @@ void mlfq_delete(struct mlfqQueue *queue, struct proc *proc) {
 //    via swtch back to the scheduler.
 
 //Altered scheduler to include MLFQ_scheduler
-void
-scheduler(void)
+void scheduler(void)
 {
-struct cpu *c = mycpu();
-c->proc=0;
-for(;;){
-// Avoid deadlock by ensuring that devices can interrupt.
-intr_on();
-if(mlfqFlag){//the flag indicates if MLFQ scheduler is running
-MLFQ_scheduler(c);
-}else{
-RR_scheduler(c);
-}
-}
+    struct cpu *c = mycpu();
+    c->proc=0;
+    for(;;){
+        // Avoid deadlock by ensuring that devices can interrupt.
+        intr_on();
+        if(mlfqFlag){//the flag indicates if MLFQ scheduler is running
+            MLFQ_scheduler(c);
+        }else{
+            RR_scheduler(c);
+        }
+    }
 }
 
 //Constructed from the existing scheduler 
@@ -599,6 +613,11 @@ void MLFQ_scheduler(struct cpu *c) {
     struct proc *p = 0; // p is the process scheduled to run; initially it is none
 
     while (mlfqFlag) { // each iteration is run every time when the scheduler gains control
+        printf("(In MLFQ_scheduler) Entering MLFQ scheduling loop\n");
+
+        // Rule 2: When a process enters the system, its starting priority is 0
+        // (implicitly implemented when a new process is created and added to the MLFQ scheduler)
+        
         // Rule 1: Find the process with the highest priority
         int highest_priority = -1;
         for (int i = 0; i < NPROC; i++) {
@@ -610,27 +629,28 @@ void MLFQ_scheduler(struct cpu *c) {
 
         // Rule 2: If no process is found, continue searching
         if (p == 0) {
-            printf("No process found.\n");
+            printf("(In MLFQ_scheduler) No process found.\n");
             continue;
         }
 
         // Rule 3: Run the selected process with a time quantum of 2*(priority + 1) ticks
-        if (p->state == RUNNABLE || p->state == RUNNING) {
+        if ((p > 0) && (p->state == RUNNABLE || p->state == RUNNING)) {
+            printf("(In MLFQ_scheduler) Running process %d\n", p->pid);
             // Check if p's time quantum for the current queue expires or not
             if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
-                printf("Process %d exceeded its time quantum.\n", p->pid);
+                printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
                 // Move p to the queue below it (if p is not at the bottom queue yet)
                 if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
                     // Move the process to the next lower priority queue
                     struct mlfqQueue *lowerQueue = &mlfqQueues[p->mlfqInfo.priority + 1];
                     mlfq_enque(lowerQueue, p);
-                    printf("Process %d moved to lower priority queue.\n", p->pid);
+                    printf("(In MLFQ_scheduler) Process %d moved to lower priority queue.\n", p->pid);
                 }
 
                 // Remove p from its current queue
                 struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
                 mlfq_delete(currentQueue, p);
-                printf("Process %d removed from current queue.\n", p->pid);
+                printf("(In MLFQ_scheduler) Process %d removed from current queue.\n", p->pid);
 
                 // Reset ticks for the current priority level
                 p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
@@ -647,14 +667,14 @@ void MLFQ_scheduler(struct cpu *c) {
             swtch(&c->context, &p->context);
             c->proc = 0;
             p->mlfqInfo.ticks[p->mlfqInfo.priority]++; // Increment tick count
-            printf("Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
+            printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
             release(&p->lock);
         }
 
         // Rule 5: After a process has been of priority number MLFQ_MAX_LEVEL - 1 for n ticks, its priority number is boosted to 0
         if (p != 0 && p->mlfqInfo.priority == MLFQ_MAX_LEVEL - 1 && p->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n) {
             p->mlfqInfo.priority = 0;
-            printf("Process %d boosted to priority 0.\n", p->pid);
+            printf("(In MLFQ_scheduler) Process %d boosted to priority 0.\n", p->pid);
         }
 
         // Rule 4: Once a process uses up its time quantum at its current priority level, its priority is degraded
@@ -662,28 +682,30 @@ void MLFQ_scheduler(struct cpu *c) {
         if (p != 0 && p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
             if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
                 p->mlfqInfo.priority++;
-                printf("Process %d priority degraded to %d.\n", p->pid, p->mlfqInfo.priority);
+                printf("(In MLFQ_scheduler) Process %d priority degraded to %d.\n", p->pid, p->mlfqInfo.priority);
             }
         }
     }
 }
 
-// Define MLFQ queues globally
-struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
-
 // System call to start MLFQ scheduler
 int startMLFQ(int m, int n) {
+  printf("The value of m is: %d\n", m);
+    printf("The size of m is: %d\n", sizeof(m));
     // Check if MLFQ scheduler is already running
     if (mlfqFlag) {
+        printf("(startMLFQ) MLFQ scheduler is already running\n");
         return -1; // MLFQ scheduler is already running
     }
 
     // Initialize MLFQ scheduler parameters
     mlfqFlag = 1;       // Set MLFQ scheduler flag to indicate it is running
-    mlfqParams.m = m; // Set number of priority levels
+    mlfqParams.m = 3; // Set number of priority levels
     mlfqParams.n = n; // Set maximum ticks at priority m-1 before boosting to 0
+
+    printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
     
-        for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
+    for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
         mlfqQueues[i].head = 0; // Initialize head pointer to NULL for each queue
     }
 
@@ -694,53 +716,48 @@ int startMLFQ(int m, int n) {
 int stopMLFQ() {
     // Check if MLFQ scheduler is not running
     if (!mlfqFlag) {
+        printf("(stopMLFQ) MLFQ scheduler is not running\n");
         return -1; // MLFQ scheduler is not running
     }
-
     // Stop MLFQ scheduler
     mlfqFlag = 0; // Clear MLFQ scheduler flag to indicate it is stopped
-    
+   
     return 0; // Success
 }
-
-// System call to get MLFQ information
 int getMLFQInfo(struct MLFQInfoReport *report) {
-    // Check if report pointer is valid
+    // Check if report pointer is valid and if MLFQ scheduler is running
     if (report == 0 || !mlfqFlag) {
-        printf("(In getMLFQInfo) Invalid pointer or MLFQ scheduler is not running\n");
-        return -1; // Invalid pointer or MLFQ scheduler is not running
+        printf("(getMLFQInfo) Invalid pointer \n");
+        return -1; // Invalid pointer
     }
-
     // Print debug information
-    printf("(In getMLFQInfo) MLFQ scheduler is running\n");
+    printf("(getMLFQInfo) MLFQ scheduler is running\n");
 
-    // Initialize report structure
+    // Initialize tick counts in the report structure
     for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
         report->tickCounts[i] = 0;
     }
-
     // Fill the report with MLFQ information
-    // Traverse all processes and update tick counts for each priority level
-    for (int i = 0; i < NPROC; i++) {
+    //TODO change the 3 to m once you fix it. It should loop through each of the child processes
+    for (int i = 0; i < 3; i++) {
         struct proc *p = &proc[i];
-        printf("(In getMLFQInfo) Process %d state: %d\n", p->pid, p->state);
+        printf("value of i: %d", i);
+        printf("(getMLFQInfo) Process %d state: %d\n", p->pid, p->state);
         if (p->state == RUNNABLE || p->state == RUNNING) {
+            // Update tick counts for each priority level
+            printf("(getMLFQInfo) Process %d mlfqInfo priority: %d\n", p->pid, p->mlfqInfo.priority);
+            printf("(getMLFQInfo) Process %d mlfqInfo ticks: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
             report->tickCounts[p->mlfqInfo.priority] += p->mlfqInfo.ticks[p->mlfqInfo.priority];
-            printf("(In getMLFQ_info) Process %d tick count at priority %d: %d\n", p->pid, p->mlfqInfo.priority, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
         }
     }
-
     // Debugging: Print tick counts after updating
-    printf("(In getMLFQ_info) Reported tick counts:\n");
+    printf("(getMLFQInfo) Reported tick counts:\n");
     for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
-        printf("(In getMLFQ_info) Priority %d: %d\n", i, report->tickCounts[i]);
+        printf("(getMLFQInfo) Priority %d: %d\n", i, report->tickCounts[i]);
     }
-
+    printf("reached the bottom of getMLFQInfo\n");
     return 0; // Success
 }
-
-
-
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores

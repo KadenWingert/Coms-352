@@ -39,6 +39,7 @@ main(int argc, char*argv[])
     int maxTickAtBottom = 200;
     maxTickAtBottom = atoi(argv[3]);
 
+  printf("In testssyscall value of numlevel is: %d\n", numLevel);
     int callResult=startMLFQ(numLevel,maxTickAtBottom);
     printf("Return from startMLFQ: %d\n", callResult);
 
@@ -63,7 +64,7 @@ main(int argc, char*argv[])
 		  }
 	  }
 
-    
+
     if(ret>0){//only parent proceed without waiting
       callResult=stopMLFQ();
       printf("Return from stopMLFQ: %d\n", callResult);
@@ -76,6 +77,7 @@ main(int argc, char*argv[])
     
     struct MLFQInfoReport mlfqInfo;
     callResult = getMLFQInfo(&mlfqInfo);
+    printf("call result: %d\n\n\n", callResult);
     //printf("Return from getMLFQinfo: %d.\n", callResult);
     //printf("currentQueue: %d\n", mlfqInfo.currentQueue);
     //printf("tickCount: %d\n", mlfqInfo.tickCount);

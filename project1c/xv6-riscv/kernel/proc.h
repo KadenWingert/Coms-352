@@ -103,7 +103,7 @@ enum procstate
 void MLFQ_scheduler(struct cpu *c);
 void RR_scheduler(struct cpu *c);
 
-// Define struct MLFQInfoReport
+// Define the max level
 #define MLFQ_MAX_LEVEL 10
 
 // Struct to hold MLFQ process information
@@ -120,6 +120,8 @@ int startMLFQ(int m, int n);
 int stopMLFQ();
 int getMLFQInfo(struct MLFQInfoReport *report);
 
+extern int mlfqFlag; // Declare the flag
+
 // MLFQ queue element
 struct mlfqQueueElement {
     struct proc *proc; // Pointer to process
@@ -132,17 +134,10 @@ struct mlfqQueue {
     struct mlfqQueueElement *head; // Head element of the queue
 };
 
-// Declare MLFQ queues globally
-extern struct mlfqQueue mlfqQueues[MLFQ_MAX_LEVEL];
-
 // Function declarations
 void mlfq_enque(struct mlfqQueue *queue, struct proc *proc);
 struct proc *mlfq_deque(struct mlfqQueue *queue);
 void mlfq_delete(struct mlfqQueue *queue, struct proc *proc);
-
-
-
-
 
 // Per-process state
 struct proc
