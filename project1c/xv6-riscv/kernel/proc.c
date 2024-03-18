@@ -612,33 +612,24 @@ release(&p->lock);
 void MLFQ_scheduler(struct cpu *c) {
     struct proc *p = 0; // p is the process scheduled to run; initially it is none
 
+    // Print the state of each process
+for (int i = 0; i < NPROC; i++) {
+    printf("(In MLFQ_scheduler) Process %d state: %d\n", proc[i].pid, proc[i].state);
+}
+
     while (mlfqFlag) { // each iteration is run every time when the scheduler gains control
         printf("(In MLFQ_scheduler) Entering MLFQ scheduling loop\n");
 
-        // Rule 2: When a process enters the system, its starting priority is 0
-        // (implicitly implemented when a new process is created and added to the MLFQ scheduler)
-        
-        // Rule 1: Find the process with the highest priority
-        int highest_priority = -1;
-        for (int i = 0; i < NPROC; i++) {
-            if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority > highest_priority) {
-                highest_priority = proc[i].mlfqInfo.priority;
-                p = &proc[i];
-            }
-        }
+        // Increment the tick count of p on the current queue
+        if (p > 0 && (p->state == RUNNABLE || p->state == RUNNING)) {
+            // Increment tick count of p on the current queue
+            p->mlfqInfo.ticks[p->mlfqInfo.priority]++;
+            printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
 
-        // Rule 2: If no process is found, continue searching
-        if (p == 0) {
-            printf("(In MLFQ_scheduler) No process found.\n");
-            continue;
-        }
-
-        // Rule 3: Run the selected process with a time quantum of 2*(priority + 1) ticks
-        if ((p > 0) && (p->state == RUNNABLE || p->state == RUNNING)) {
-            printf("(In MLFQ_scheduler) Running process %d\n", p->pid);
-            // Check if p's time quantum for the current queue expires or not
+            // Check if p’s time quantum for the current queue expires
             if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
                 printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
+                // Updating p’s running history accordingly
                 // Move p to the queue below it (if p is not at the bottom queue yet)
                 if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
                     // Move the process to the next lower priority queue
@@ -659,31 +650,59 @@ void MLFQ_scheduler(struct cpu *c) {
                 p = 0;
                 continue;
             }
+        }
 
-            // Run the selected process
+        // Implement Rule 5: Increment the tick counts for the processes at the bottom queue
+        // and move each process who has stayed there for n ticks to the top queue
+        for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
+            struct mlfqQueue *queue = &mlfqQueues[i];
+            struct mlfqQueueElement *temp = queue->head;
+            while (temp != 0) {
+                temp->proc->mlfqInfo.ticksAtMaxPriority++;
+                printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
+                if (i == MLFQ_MAX_LEVEL - 1 && temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n) {
+                    // Move the process to the top queue
+                    struct mlfqQueue *topQueue = &mlfqQueues[0];
+                    mlfq_enque(topQueue, temp->proc);
+                    // Remove the process from the bottom queue
+                    mlfq_delete(queue, temp->proc);
+                }
+                temp = temp->next;
+            }
+        }
+
+        // Add new processes (which haven’t been added to any queue yet) to queue 0
+        for (int i = 0; i < NPROC; i++) {
+            if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.addedToMLFQ == 0) {
+                struct mlfqQueue *queue = &mlfqQueues[0];
+                mlfq_enque(queue, &proc[i]);
+                proc[i].mlfqInfo.addedToMLFQ = 1;
+                printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
+            }
+        }
+if (p == 0) {
+    int highest_priority = -1;
+    for (int i = 0; i < NPROC; i++) {
+        if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority > highest_priority && proc[i].state != RUNNING) {
+            highest_priority = proc[i].mlfqInfo.priority;
+            p = &proc[i];
+        }
+    }
+    if (p != 0) {
+        printf("(In MLFQ_scheduler) Selected process to run: %d\n", p->pid);
+    } else {
+        printf("(In MLFQ_scheduler) No process found to run.\n");
+    }
+}
+
+        // Run the selected process
+        if (p > 0) {
             acquire(&p->lock);
             p->state = RUNNING;
             c->proc = p;
             swtch(&c->context, &p->context);
             c->proc = 0;
-            p->mlfqInfo.ticks[p->mlfqInfo.priority]++; // Increment tick count
-            printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
             release(&p->lock);
-        }
-
-        // Rule 5: After a process has been of priority number MLFQ_MAX_LEVEL - 1 for n ticks, its priority number is boosted to 0
-        if (p != 0 && p->mlfqInfo.priority == MLFQ_MAX_LEVEL - 1 && p->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n) {
-            p->mlfqInfo.priority = 0;
-            printf("(In MLFQ_scheduler) Process %d boosted to priority 0.\n", p->pid);
-        }
-
-        // Rule 4: Once a process uses up its time quantum at its current priority level, its priority is degraded
-        // (i.e. its priority number is incremented by one and it moves down one queue...if its priority number is not MLFQ_MAX_LEVEL - 1 yet.)
-        if (p != 0 && p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1)) {
-            if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
-                p->mlfqInfo.priority++;
-                printf("(In MLFQ_scheduler) Process %d priority degraded to %d.\n", p->pid, p->mlfqInfo.priority);
-            }
         }
     }
 }
