@@ -689,7 +689,14 @@ void MLFQ_scheduler(struct cpu *c) {
 }
 
 // System call to start MLFQ scheduler
-int startMLFQ(int m, int n) {
+int startMLFQ(void) {
+
+int m, n;
+
+argint(0, &m);
+
+argint(1, &n);
+
   printf("The value of m is: %d\n", m);
     printf("The size of m is: %d\n", sizeof(m));
     // Check if MLFQ scheduler is already running
@@ -700,7 +707,7 @@ int startMLFQ(int m, int n) {
 
     // Initialize MLFQ scheduler parameters
     mlfqFlag = 1;       // Set MLFQ scheduler flag to indicate it is running
-    mlfqParams.m = 3; // Set number of priority levels
+    mlfqParams.m = m; // Set number of priority levels
     mlfqParams.n = n; // Set maximum ticks at priority m-1 before boosting to 0
 
     printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
@@ -738,11 +745,10 @@ int getMLFQInfo(struct MLFQInfoReport *report) {
         report->tickCounts[i] = 0;
     }
     // Fill the report with MLFQ information
-    //TODO change the 3 to m once you fix it. It should loop through each of the child processes
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < NPROC; i++) {
         struct proc *p = &proc[i];
-        printf("value of i: %d", i);
-        printf("(getMLFQInfo) Process %d state: %d\n", p->pid, p->state);
+        // printf("value of i: %d", i);
+        // printf("(getMLFQInfo) Process %d state: %d\n", p->pid, p->state);
         if (p->state == RUNNABLE || p->state == RUNNING) {
             // Update tick counts for each priority level
             printf("(getMLFQInfo) Process %d mlfqInfo priority: %d\n", p->pid, p->mlfqInfo.priority);

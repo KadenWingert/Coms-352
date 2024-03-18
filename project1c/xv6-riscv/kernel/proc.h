@@ -116,7 +116,7 @@ struct MLFQInfoReport {
 };
 
 // Declare system call prototypes
-int startMLFQ(int m, int n);
+int startMLFQ();
 int stopMLFQ();
 int getMLFQInfo(struct MLFQInfoReport *report);
 

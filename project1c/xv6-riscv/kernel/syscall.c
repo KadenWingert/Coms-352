@@ -104,9 +104,9 @@ extern uint64 sys_ps(void);
 extern uint64 sys_getschedhistory(void);
 
 // Prototypes for the MLFQ scheduler system calls
-extern int sys_startMLFQ(int m, int n);
-extern int sys_stopMLFQ(void);
-extern int sys_getMLFQInfo(struct MLFQInfoReport *report);
+int sys_startMLFQ(int m, int n);
+int sys_stopMLFQ(void);
+int sys_getMLFQInfo(struct MLFQInfoReport *report);
 
 
 
