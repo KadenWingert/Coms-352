@@ -77,7 +77,7 @@ main(int argc, char*argv[])
     
     struct MLFQInfoReport mlfqInfo;
     callResult = getMLFQInfo(&mlfqInfo);
-    printf("call result: %d\n\n\n", callResult);
+    printf("call result: %d\n", callResult);
     //printf("Return from getMLFQinfo: %d.\n", callResult);
     //printf("currentQueue: %d\n", mlfqInfo.currentQueue);
     //printf("tickCount: %d\n", mlfqInfo.tickCount);

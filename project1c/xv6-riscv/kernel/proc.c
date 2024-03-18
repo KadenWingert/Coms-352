@@ -698,7 +698,6 @@ argint(0, &m);
 argint(1, &n);
 
   printf("The value of m is: %d\n", m);
-    printf("The size of m is: %d\n", sizeof(m));
     // Check if MLFQ scheduler is already running
     if (mlfqFlag) {
         printf("(startMLFQ) MLFQ scheduler is already running\n");
@@ -731,39 +730,49 @@ int stopMLFQ() {
    
     return 0; // Success
 }
-int getMLFQInfo(struct MLFQInfoReport *report) {
-    // Check if report pointer is valid and if MLFQ scheduler is running
-    if (report == 0 || !mlfqFlag) {
-        printf("(getMLFQInfo) Invalid pointer \n");
-        return -1; // Invalid pointer
+
+int getMLFQInfo(void) {
+    struct MLFQInfoReport report; // Define report structure locally
+    uint64 arg_addr;
+
+    // Retrieve the pointer-type argument using argaddr()
+    argaddr(0, &arg_addr);
+
+    // Copy the report structure from user space to kernel space
+    if (copyin(myproc()->pagetable, (char *)&report, arg_addr, sizeof(struct MLFQInfoReport)) < 0) {
+        printf("(getMLFQInfo) Failed to copy report structure from user space\n");
+        return -1;
     }
-    // Print debug information
-    printf("(getMLFQInfo) MLFQ scheduler is running\n");
 
     // Initialize tick counts in the report structure
-    for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
-        report->tickCounts[i] = 0;
+    for (int i = 0; i < mlfqParams.m; i++) {
+        report.tickCounts[i] = 0;
     }
-    // Fill the report with MLFQ information
+
+    // Fill the report with MLFQ information for all processes
     for (int i = 0; i < NPROC; i++) {
         struct proc *p = &proc[i];
-        // printf("value of i: %d", i);
-        // printf("(getMLFQInfo) Process %d state: %d\n", p->pid, p->state);
-        if (p->state == RUNNABLE || p->state == RUNNING) {
-            // Update tick counts for each priority level
-            printf("(getMLFQInfo) Process %d mlfqInfo priority: %d\n", p->pid, p->mlfqInfo.priority);
-            printf("(getMLFQInfo) Process %d mlfqInfo ticks: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
-            report->tickCounts[p->mlfqInfo.priority] += p->mlfqInfo.ticks[p->mlfqInfo.priority];
+        for (int j = 0; j < mlfqParams.m; j++) {
+            report.tickCounts[j] += p->mlfqInfo.ticks[j];
         }
     }
+
     // Debugging: Print tick counts after updating
     printf("(getMLFQInfo) Reported tick counts:\n");
-    for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
-        printf("(getMLFQInfo) Priority %d: %d\n", i, report->tickCounts[i]);
+    for (int i = 0; i < mlfqParams.m; i++) {
+        printf("(getMLFQInfo) Priority %d: %d\n", i, report.tickCounts[i]);
     }
-    printf("reached the bottom of getMLFQInfo\n");
+
+    // Copy the updated report structure back to user space
+    if (copyout(myproc()->pagetable, arg_addr, (char *)&report, sizeof(struct MLFQInfoReport)) < 0) {
+        printf("(getMLFQInfo) Failed to copy updated report structure to user space\n");
+        return -1;
+    }
+
+    printf("(getMLFQInfo) Successfully updated and copied report structure to user space\n");
     return 0; // Success
 }
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores

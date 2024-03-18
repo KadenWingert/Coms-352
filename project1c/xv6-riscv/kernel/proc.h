@@ -118,7 +118,8 @@ struct MLFQInfoReport {
 // Declare system call prototypes
 int startMLFQ();
 int stopMLFQ();
-int getMLFQInfo(struct MLFQInfoReport *report);
+int getMLFQInfo();
+
 
 extern int mlfqFlag; // Declare the flag
 
