@@ -112,7 +112,7 @@ struct MLFQInfoReport {
     int priority;                       // Current priority of the process
     int ticks[MLFQ_MAX_LEVEL];          // Ticks the process has run at each priority level
     int ticksAtMaxPriority;             // Ticks the process has stayed at priority m-1
-    int tickCounts[MLFQ_MAX_LEVEL];     // Add tickCounts member
+    int tickCounts[MLFQ_MAX_LEVEL];     // Add tickCounts member...didn't seem to use this
 };
 
 // Declare system call prototypes

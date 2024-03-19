@@ -39,7 +39,6 @@ main(int argc, char*argv[])
     int maxTickAtBottom = 200;
     maxTickAtBottom = atoi(argv[3]);
 
-  printf("In testssyscall value of numlevel is: %d\n", numLevel);
     int callResult=startMLFQ(numLevel,maxTickAtBottom);
     printf("Return from startMLFQ: %d\n", callResult);
 
