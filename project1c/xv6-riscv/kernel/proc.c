@@ -611,14 +611,7 @@ release(&p->lock);
 // MLFQ scheduler function
 void MLFQ_scheduler(struct cpu *c) {
     struct proc *p = 0; // p is the process scheduled to run; initially it is none
-
-    // Print the state of each process
-for (int i = 0; i < NPROC; i++) {
-    printf("(In MLFQ_scheduler) Process %d state: %d\n", proc[i].pid, proc[i].state);
-}
-
-    while (mlfqFlag) { // each iteration is run every time when the scheduler gains control
-        printf("(In MLFQ_scheduler) Entering MLFQ scheduling loop\n");
+    while (mlfqFlag) { // each iteration is run every time when the scheduler gains control        
 
         // Increment the tick count of p on the current queue
         if (p > 0 && (p->state == RUNNABLE || p->state == RUNNING)) {
@@ -631,11 +624,14 @@ for (int i = 0; i < NPROC; i++) {
                 printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
                 // Updating p’s running history accordingly
                 // Move p to the queue below it (if p is not at the bottom queue yet)
-                if (p->mlfqInfo.priority < MLFQ_MAX_LEVEL - 1) {
+                if (p->mlfqInfo.priority < mlfqParams.m - 1) {
                     // Move the process to the next lower priority queue
                     struct mlfqQueue *lowerQueue = &mlfqQueues[p->mlfqInfo.priority + 1];
                     mlfq_enque(lowerQueue, p);
-                    printf("(In MLFQ_scheduler) Process %d moved to lower priority queue.\n", p->pid);
+                    printf("(In MLFQ_scheduler) Process %d moved to a priority queue.\n", p->pid);
+
+                        // make it a worse priority
+                        p->mlfqInfo.priority++; // Adjust priority
                 }
 
                 // Remove p from its current queue
@@ -646,30 +642,38 @@ for (int i = 0; i < NPROC; i++) {
                 // Reset ticks for the current priority level
                 p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
 
+
                 // Set p to 0 (to indicate another process should be found to run next)
                 p = 0;
                 continue;
             }
         }
 
-        // Implement Rule 5: Increment the tick counts for the processes at the bottom queue
-        // and move each process who has stayed there for n ticks to the top queue
-        for (int i = 0; i < MLFQ_MAX_LEVEL; i++) {
-            struct mlfqQueue *queue = &mlfqQueues[i];
-            struct mlfqQueueElement *temp = queue->head;
-            while (temp != 0) {
+
+    // Implement Rule 5: Increment the tick counts for the processes at the bottom queue
+    // and move each process who has stayed there for n ticks to the top queue
+    for (int i = 0; i < mlfqParams.m; i++) {
+        struct mlfqQueue *queue = &mlfqQueues[i];
+        struct mlfqQueueElement *temp = queue->head;
+        while (temp != 0) {
+            if (i == mlfqParams.m - 1) { // Only for the top queue
                 temp->proc->mlfqInfo.ticksAtMaxPriority++;
                 printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
-                if (i == MLFQ_MAX_LEVEL - 1 && temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n) {
+                if (temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n) {
                     // Move the process to the top queue
                     struct mlfqQueue *topQueue = &mlfqQueues[0];
                     mlfq_enque(topQueue, temp->proc);
                     // Remove the process from the bottom queue
                     mlfq_delete(queue, temp->proc);
+
+                        // make it a better priority
+                        temp->proc->mlfqInfo.priority--; // Adjust priority
                 }
-                temp = temp->next;
             }
+            temp = temp->next;
         }
+    }
+
 
         // Add new processes (which haven’t been added to any queue yet) to queue 0
         for (int i = 0; i < NPROC; i++) {
@@ -680,14 +684,29 @@ for (int i = 0; i < NPROC; i++) {
                 printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
             }
         }
-if (p == 0) {
-    int highest_priority = -1;
+    if (p == 0) {
+    int highest_priority = __INT_MAX__;
     for (int i = 0; i < NPROC; i++) {
-        if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority > highest_priority && proc[i].state != RUNNING) {
+      // if(proc[i].state == RUNNABLE){ printf("i = %d...The value of the priority when proc[i].mlfqInfo.priority > highest_priority(%d): %d\n", i, proc[i].mlfqInfo.priority, highest_priority);}
+        if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority < highest_priority) {
             highest_priority = proc[i].mlfqInfo.priority;
+            printf("The value of i when the proccess is chosen is: %d\n", i);
             p = &proc[i];
+            
+            // Print the process and its priority
+            printf("(In MLFQ_scheduler) Process %d selected with priority %d\n", p->pid, p->mlfqInfo.priority);
         }
     }
+
+        // Debug statement to print the priority of all processes
+    printf("(In MLFQ_scheduler) PRIORITY OF ALL PROCCESSES:\n");
+    for (int i = 0; i < NPROC; i++) {
+        if (proc[i].state == RUNNABLE) {
+            printf("Process %d priority: %d\n", proc[i].pid, proc[i].mlfqInfo.priority);
+        }
+    }
+
+
     if (p != 0) {
         printf("(In MLFQ_scheduler) Selected process to run: %d\n", p->pid);
     } else {
