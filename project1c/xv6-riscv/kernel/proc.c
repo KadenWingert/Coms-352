@@ -627,148 +627,11 @@ void RR_scheduler(struct cpu *c)
   }
 }
 
-// MLFQ scheduler function
-// void MLFQ_scheduler(struct cpu *c)
-// {
-//   struct proc *p = 0; // p is the process scheduled to run; initially it is none
-//   while (mlfqFlag)
-//   { // each iteration is run every time when the scheduler gains control
-
-//     // if the current process is still runnable
-//     if (p != 0 && (p->state == RUNNABLE || p->state == RUNNING))
-//     {
-//       // Increment tick count of p on the current queue
-//       p->mlfqInfo.ticks[p->mlfqInfo.priority]++;
-//       p->mlfqInfo.tickCounts[p->mlfqInfo.priority]++;
-//       printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
-
-//       // Check if p’s time quantum for the current queue expires
-//       if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1))
-//       {
-//         printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
-
-//         if (p->mlfqInfo.priority < mlfqParams.m - 1)
-//         {
-//           //reset ticks to 0 for the priority level
-//           p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
-//           // Move p to the next lower priority queue
-//           struct mlfqQueue *lowerQueue = &mlfqQueues[p->mlfqInfo.priority + 1];
-
-//           // Remove p from its current queue
-//           struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
-//           mlfq_delete(currentQueue, p);
-
-//           // Enqueue p into the lower priority queue
-//           mlfq_enque(lowerQueue, p);
-//           printf("(In MLFQ_scheduler) Process %d moved to a lower priority queue.\n", p->pid);
-
-//           // Update the priority of the process
-//           p->mlfqInfo.priority++;
-//         }
-//         else
-//         {
-//           // No need to remove p from its current queue if it's already at the lowest priority
-//           printf("(In MLFQ_scheduler) Process %d reached the lowest priority level.\n", p->pid);
-//         }
-
-//         // Set p to 0 (to indicate another process should be found to run next)
-//         p = 0;
-//         continue;
-//       }
-//     }
-//     // Implement Rule 5: Increment the tick counts for the processes at the bottom queue
-//     // and move each process who has stayed there for n ticks to the top queue
-//     struct mlfqQueue *lastQueue = &mlfqQueues[mlfqParams.m - 1];
-//     struct mlfqQueueElement *temp = lastQueue->head;
-
-//     while (temp != 0)
-//     {
-//       temp->proc->mlfqInfo.ticksAtMaxPriority++;
-//       temp->proc->mlfqInfo.tickCounts[temp->proc->mlfqInfo.priority]++;
-
-//       printf("IN RULE 5 LOGIC\n");
-//       printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
-//       if (temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n)
-//       {
-//         printf("(In MLFQ_scheduler) Moving process %d to the top queue\n", temp->proc->pid);
-//         // Move the process to the top queue
-//         struct mlfqQueue *topQueue = &mlfqQueues[0];
-//         mlfq_enque(topQueue, temp->proc);
-//         // Remove the process from the bottom queue
-//         printf("(In MLFQ_scheduler) Removing process %d from the bottom queue\n", temp->proc->pid);
-//         mlfq_delete(lastQueue, temp->proc);
-//         // Reset tick count at max priority level
-//         temp->proc->mlfqInfo.ticksAtMaxPriority = 0;
-//         temp->proc->mlfqInfo.ticks[mlfqParams.m - 1] = 0;
-//         // Adjust priority
-//         printf("(In MLFQ_scheduler) Process %d's original priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
-//         temp->proc->mlfqInfo.priority = 0;
-//         printf("(In MLFQ_scheduler) Process %d's new priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
-//       }
-//       temp = temp->next;
-//     }
-//     // Add new processes (which haven’t been added to any queue yet) to queue 0
-//     for (int i = 0; i < NPROC; i++)
-//     {
-//       if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.addedToMLFQ == 0)
-//       {
-//         struct mlfqQueue *queue = &mlfqQueues[0];
-//         mlfq_enque(queue, &proc[i]);
-//         proc[i].mlfqInfo.addedToMLFQ = 1;
-//         printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
-//       }
-//     }
-//     // Select the process with the highest priority to run
-//     if (p == 0)
-//     {
-//       int highest_priority = __INT_MAX__;
-//       for (int i = 0; i < NPROC; i++)
-//       {
-//         if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority < highest_priority)
-//         {
-//           highest_priority = proc[i].mlfqInfo.priority;
-//           p = &proc[i];
-//           // Print the process and its priority
-//           printf("(In MLFQ_scheduler) Process %d selected with priority %d\n", p->pid, p->mlfqInfo.priority);
-//         }
-//       }
-
-//       // Debug statement to print the priority of all processes
-//       printf("(In MLFQ_scheduler) PRIORITY OF ALL PROCCESSES:\n");
-//       for (int i = 0; i < NPROC; i++)
-//       {
-//         if (proc[i].state == RUNNABLE)
-//         {
-//           printf("Process %d priority: %d\n", proc[i].pid, proc[i].mlfqInfo.priority);
-//         }
-//       }
-
-//       if (p != 0)
-//       {
-//         printf("(In MLFQ_scheduler) Selected process to run: %d\n", p->pid);
-//       }
-//       else
-//       {
-//         printf("(In MLFQ_scheduler) No process found to run.\n");
-//       }
-//     }
-
-//     // Run the selected process
-//     if (p > 0)
-//     {
-//       acquire(&p->lock);
-//       p->state = RUNNING;
-//       c->proc = p;
-//       swtch(&c->context, &p->context);
-//       c->proc = 0;
-//       release(&p->lock);
-//     }
-//   }
-// }
-
 void MLFQ_scheduler(struct cpu *c)
 {
   struct proc *p = 0; // p is the process scheduled to run; initially it is none
+  int rr_index = 0;   // Initialize round-robin index
+
   while (mlfqFlag)
   { // each iteration is run every time when the scheduler gains control
 
@@ -781,7 +644,6 @@ void MLFQ_scheduler(struct cpu *c)
       printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
 
       // Check if p’s time quantum for the current queue expires
-      // Check if p’s time quantum for the current queue expires
       if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1))
       {
         printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
@@ -793,18 +655,28 @@ void MLFQ_scheduler(struct cpu *c)
           mlfq_enque(lowerQueue, p);
           printf("(In MLFQ_scheduler) Process %d moved to a lower priority queue.\n", p->pid);
 
-          // make it a worse priority
+          // Clear the process from its previous queue
+          struct mlfqQueue *previousQueue = &mlfqQueues[p->mlfqInfo.priority];
+          mlfq_delete(previousQueue, p);
+          printf("(In MLFQ_scheduler) Process %d removed from previous queue.\n", p->pid);
+
+          // Reset ticks for the current priority level
+          p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
+          printf("(In MLFQ_scheduler) Reset tick count for process %d at priority %d.\n", p->pid, p->mlfqInfo.priority);
+
+          // Increment the priority
           p->mlfqInfo.priority++;
         }
+        //It is in the lowest priority already
         else
         {
           // Reset ticks for the current priority level only if the process will remain in the same queue
           p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
 
           // Remove p from its current queue since it's at the maximum priority
-          struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
-          mlfq_delete(currentQueue, p);
-          printf("(In MLFQ_scheduler) Process %d removed from current queue.\n", p->pid);
+          // struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
+          // mlfq_delete(currentQueue, p);
+          // printf("(In MLFQ_scheduler) Process %d removed from current queue.\n", p->pid);
         }
 
         // Set p to 0 (to indicate another process should be found to run next)
@@ -813,34 +685,37 @@ void MLFQ_scheduler(struct cpu *c)
       }
     }
 
-    // Implement Rule 5: Increment the tick counts for the processes at the bottom queue
-    // and move each process who has stayed there for n ticks to the top queue
+    // Implement Rule 5: Increment the tick counts for the processes at the bottom queue and move each process who has stayed there for n ticks to the top queue
     struct mlfqQueue *lastQueue = &mlfqQueues[mlfqParams.m - 1];
     struct mlfqQueueElement *temp = lastQueue->head;
 
     while (temp != 0)
     {
-      temp->proc->mlfqInfo.ticksAtMaxPriority++;
-      temp->proc->mlfqInfo.tickCounts[temp->proc->mlfqInfo.priority]++;
-
-      printf("IN RULE 5 LOGIC\n");
-      printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
-      if (temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n)
+      if (temp->proc->mlfqInfo.priority == mlfqParams.m - 1) // Check if process is at max priority
       {
-        printf("(In MLFQ_scheduler) Moving process %d to the top queue\n", temp->proc->pid);
-        // Move the process to the top queue
-        struct mlfqQueue *topQueue = &mlfqQueues[0];
-        mlfq_enque(topQueue, temp->proc);
-        // Remove the process from the bottom queue
-        printf("(In MLFQ_scheduler) Removing process %d from the bottom queue\n", temp->proc->pid);
-        mlfq_delete(lastQueue, temp->proc);
-        // Reset tick count at max priority level
-        temp->proc->mlfqInfo.ticksAtMaxPriority = 0;
-        temp->proc->mlfqInfo.ticks[mlfqParams.m - 1] = 0;
-        // Adjust priority
-        printf("(In MLFQ_scheduler) Process %d's original priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
-        temp->proc->mlfqInfo.priority = 0;
-        printf("(In MLFQ_scheduler) Process %d's new priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
+          temp->proc->mlfqInfo.ticksAtMaxPriority++;
+          temp->proc->mlfqInfo.tickCounts[temp->proc->mlfqInfo.priority]++;
+
+        printf("IN RULE 5 LOGIC...");
+        printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
+        if (temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n)
+        {
+          printf("(In MLFQ_scheduler) Moving process %d to the top queue\n", temp->proc->pid);
+          // Move the process to the top queue
+          struct mlfqQueue *topQueue = &mlfqQueues[0];
+          mlfq_enque(topQueue, temp->proc);
+          // Remove the process from the bottom queue
+          printf("(In MLFQ_scheduler) Removing process %d from the bottom queue\n", temp->proc->pid);
+          mlfq_delete(lastQueue, temp->proc);
+          // Reset tick count at max priority level
+          temp->proc->mlfqInfo.ticksAtMaxPriority = 0;
+          temp->proc->mlfqInfo.ticks[temp->proc->mlfqInfo.priority] = 0; // Reset tick count for the current priority level
+          // Adjust priority
+          printf("(In MLFQ_scheduler) Process %d's original priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
+          temp->proc->mlfqInfo.priority = 0;
+          printf("(In MLFQ_scheduler) Process %d's new priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
+          temp->proc->mlfqInfo.ticks[temp->proc->mlfqInfo.priority] = 0; // Reset tick count for the current priority level
+        }
       }
       temp = temp->next;
     }
@@ -856,40 +731,54 @@ void MLFQ_scheduler(struct cpu *c)
         printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
       }
     }
-    // Select the process with the highest priority to run
-    if (p == 0)
+if(p == 0){
+    int highest_priority = __INT_MAX__;
+    struct proc *selected_proc = 0; // Initialize selected_proc to NULL
+
+    // Find the highest priority
+    for (int i = 0; i < NPROC; i++)
     {
-      int highest_priority = __INT_MAX__;
-      for (int i = 0; i < NPROC; i++)
+      if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority < highest_priority)
       {
-        if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority < highest_priority)
-        {
-          highest_priority = proc[i].mlfqInfo.priority;
-          p = &proc[i];
-          // Print the process and its priority
-          printf("(In MLFQ_scheduler) Process %d selected with priority %d\n", p->pid, p->mlfqInfo.priority);
-        }
-      }
-
-      // Debug statement to print the priority of all processes
-      printf("(In MLFQ_scheduler) PRIORITY OF ALL PROCCESSES:\n");
-      for (int i = 0; i < NPROC; i++)
-      {
-        if (proc[i].state == RUNNABLE)
-        {
-          printf("Process %d priority: %d\n", proc[i].pid, proc[i].mlfqInfo.priority);
-        }
-      }
-
-      if (p != 0)
-      {
-        printf("(In MLFQ_scheduler) Selected process to run: %d\n", p->pid);
-      }
-      else
-      {
-        printf("(In MLFQ_scheduler) No process found to run.\n");
+        highest_priority = proc[i].mlfqInfo.priority;
       }
     }
+
+    // Collect processes with the highest priority
+    int num_procs_highest_priority = 0;              // Number of processes with the highest priority
+    struct proc *procs_with_highest_priority[NPROC]; // Array to store processes with the highest priority
+
+    for (int i = 0; i < NPROC; i++)
+    {
+      if (proc[i].state == RUNNABLE && proc[i].mlfqInfo.priority == highest_priority)
+      {
+        procs_with_highest_priority[num_procs_highest_priority++] = &proc[i];
+      }
+    }
+
+    // Debug: Print information about processes and their states
+    printf("(In MLFQ_scheduler) Processes with highest priority. The highest priority is:  %d\n", highest_priority);
+    for (int i = 0; i < num_procs_highest_priority; i++)
+    {
+      printf("(In MLFQ_scheduler) Process %d, priority=%d\n", procs_with_highest_priority[i]->pid, procs_with_highest_priority[i]->mlfqInfo.priority);
+    }
+    // If there are multiple processes with the highest priority, select based on Round-Robin
+    if (num_procs_highest_priority > 1)
+    {
+      // Find the next process to run in Round-Robin fashion
+      selected_proc = procs_with_highest_priority[rr_index];
+      rr_index = (rr_index + 1 ) % num_procs_highest_priority; // Move to the next process for the next time
+
+      printf("(In MLFQ_scheduler) Multiple processes with highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
+    }
+    else if (num_procs_highest_priority == 1)
+    {
+      selected_proc = procs_with_highest_priority[0]; // If only one process with the highest priority, select it
+      printf("(In MLFQ_scheduler) There is only one process with the highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
+    }
+
+    p = selected_proc; // Assign the selected process to p
+  }
 
     // Run the selected process
     if (p > 0)
@@ -904,284 +793,284 @@ void MLFQ_scheduler(struct cpu *c)
   }
 }
 
-// System call to start MLFQ scheduler
-int startMLFQ(void)
-{
+    // System call to start MLFQ scheduler
+    int startMLFQ(void)
+    {
 
-  int m, n;
+      int m, n;
 
-  argint(0, &m);
+      argint(0, &m);
 
-  argint(1, &n);
+      argint(1, &n);
 
-  printf("The value of m is: %d\n", m);
-  // Check if MLFQ scheduler is already running
-  if (mlfqFlag)
-  {
-    printf("(startMLFQ) MLFQ scheduler is already running\n");
-    return -1; // MLFQ scheduler is already running
-  }
+      printf("The value of m is: %d\n", m);
+      // Check if MLFQ scheduler is already running
+      if (mlfqFlag)
+      {
+        printf("(startMLFQ) MLFQ scheduler is already running\n");
+        return -1; // MLFQ scheduler is already running
+      }
 
-  // Initialize MLFQ scheduler parameters
-  mlfqFlag = 1;     // Set MLFQ scheduler flag to indicate it is running
-  mlfqParams.m = m; // number of priority levels
-  mlfqParams.n = n; // maximum ticks at priority m-1 before boosting to 0
+      // Initialize MLFQ scheduler parameters
+      mlfqFlag = 1;     // Set MLFQ scheduler flag to indicate it is running
+      mlfqParams.m = m; // number of priority levels
+      mlfqParams.n = n; // maximum ticks at priority m-1 before boosting to 0
 
-  printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
+      printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
 
-  for (int i = 0; i < MLFQ_MAX_LEVEL; i++)
-  {
-    mlfqQueues[i].head = 0; // Initialize head pointer to NULL for each queue
-  }
+      for (int i = 0; i < MLFQ_MAX_LEVEL; i++)
+      {
+        mlfqQueues[i].head = 0; // Initialize head pointer to NULL for each queue
+      }
 
-  return 0; // Success
-}
+      return 0; // Success
+    }
 
-// System call to stop MLFQ scheduler
-int stopMLFQ()
-{
-  // Check if MLFQ scheduler is not running
-  if (!mlfqFlag)
-  {
-    printf("(stopMLFQ) MLFQ scheduler is not running\n");
-    return -1; // MLFQ scheduler is not running
-  }
-  // Stop MLFQ scheduler
-  mlfqFlag = 0; // Clear MLFQ scheduler flag to indicate it is stopped
+    // System call to stop MLFQ scheduler
+    int stopMLFQ()
+    {
+      // Check if MLFQ scheduler is not running
+      if (!mlfqFlag)
+      {
+        printf("(stopMLFQ) MLFQ scheduler is not running\n");
+        return -1; // MLFQ scheduler is not running
+      }
+      // Stop MLFQ scheduler
+      mlfqFlag = 0; // Clear MLFQ scheduler flag to indicate it is stopped
 
-  return 0; // Success
-}
+      return 0; // Success
+    }
 
-int getMLFQInfo(void)
-{
-  uint64 arg_addr;
+    int getMLFQInfo(void)
+    {
+      uint64 arg_addr;
 
-  // Retrieve the pointer-type argument using argaddr()
-  argaddr(0, &arg_addr);
+      // Retrieve the pointer-type argument using argaddr()
+      argaddr(0, &arg_addr);
 
-  // Copy the updated MLFQInfoReport structure back to user space
-  if (copyout(myproc()->pagetable, arg_addr, (char *)&(myproc()->mlfqInfo), sizeof(struct MLFQInfoReport)) < 0)
-  {
-    printf("(getMLFQInfo) Failed to copy updated report structure to user space\n");
-    return -1;
-  }
+      // Copy the updated MLFQInfoReport structure back to user space
+      if (copyout(myproc()->pagetable, arg_addr, (char *)&(myproc()->mlfqInfo), sizeof(struct MLFQInfoReport)) < 0)
+      {
+        printf("(getMLFQInfo) Failed to copy updated report structure to user space\n");
+        return -1;
+      }
 
-  printf("(getMLFQInfo) Successfully updated and copied report structure to user space\n");
-  return 0; // Success
-}
+      printf("(getMLFQInfo) Successfully updated and copied report structure to user space\n");
+      return 0; // Success
+    }
 
-// Switch to scheduler.  Must hold only p->lock
-// and have changed proc->state. Saves and restores
-// intena because intena is a property of this
-// kernel thread, not this CPU. It should
-// be proc->intena and proc->noff, but that would
-// break in the few places where a lock is held but
-// there's no process.
-void sched(void)
-{
-  int intena;
-  struct proc *p = myproc();
+    // Switch to scheduler.  Must hold only p->lock
+    // and have changed proc->state. Saves and restores
+    // intena because intena is a property of this
+    // kernel thread, not this CPU. It should
+    // be proc->intena and proc->noff, but that would
+    // break in the few places where a lock is held but
+    // there's no process.
+    void sched(void)
+    {
+      int intena;
+      struct proc *p = myproc();
 
-  if (!holding(&p->lock))
-    panic("sched p->lock");
-  if (mycpu()->noff != 1)
-    panic("sched locks");
-  if (p->state == RUNNING)
-    panic("sched running");
-  if (intr_get())
-    panic("sched interruptible");
+      if (!holding(&p->lock))
+        panic("sched p->lock");
+      if (mycpu()->noff != 1)
+        panic("sched locks");
+      if (p->state == RUNNING)
+        panic("sched running");
+      if (intr_get())
+        panic("sched interruptible");
 
-  intena = mycpu()->intena;
-  swtch(&p->context, &mycpu()->context);
-  mycpu()->intena = intena;
-}
+      intena = mycpu()->intena;
+      swtch(&p->context, &mycpu()->context);
+      mycpu()->intena = intena;
+    }
 
-// Give up the CPU for one scheduling round.
-void yield(void)
-{
-  struct proc *p = myproc();
-  acquire(&p->lock);
-  p->state = RUNNABLE;
-  sched();
-  release(&p->lock);
-}
+    // Give up the CPU for one scheduling round.
+    void yield(void)
+    {
+      struct proc *p = myproc();
+      acquire(&p->lock);
+      p->state = RUNNABLE;
+      sched();
+      release(&p->lock);
+    }
 
-// A fork child's very first scheduling by scheduler()
-// will swtch to forkret.
-void forkret(void)
-{
-  static int first = 1;
+    // A fork child's very first scheduling by scheduler()
+    // will swtch to forkret.
+    void forkret(void)
+    {
+      static int first = 1;
 
-  // Still holding p->lock from scheduler.
-  release(&myproc()->lock);
+      // Still holding p->lock from scheduler.
+      release(&myproc()->lock);
 
-  if (first)
-  {
-    // File system initialization must be run in the context of a
-    // regular process (e.g., because it calls sleep), and thus cannot
-    // be run from main().
-    first = 0;
-    fsinit(ROOTDEV);
-  }
+      if (first)
+      {
+        // File system initialization must be run in the context of a
+        // regular process (e.g., because it calls sleep), and thus cannot
+        // be run from main().
+        first = 0;
+        fsinit(ROOTDEV);
+      }
 
-  usertrapret();
-}
+      usertrapret();
+    }
 
-// Atomically release lock and sleep on chan.
-// Reacquires lock when awakened.
-void sleep(void *chan, struct spinlock *lk)
-{
-  struct proc *p = myproc();
+    // Atomically release lock and sleep on chan.
+    // Reacquires lock when awakened.
+    void sleep(void *chan, struct spinlock *lk)
+    {
+      struct proc *p = myproc();
 
-  // Must acquire p->lock in order to
-  // change p->state and then call sched.
-  // Once we hold p->lock, we can be
-  // guaranteed that we won't miss any wakeup
-  // (wakeup locks p->lock),
-  // so it's okay to release lk.
+      // Must acquire p->lock in order to
+      // change p->state and then call sched.
+      // Once we hold p->lock, we can be
+      // guaranteed that we won't miss any wakeup
+      // (wakeup locks p->lock),
+      // so it's okay to release lk.
 
-  acquire(&p->lock); // DOC: sleeplock1
-  release(lk);
+      acquire(&p->lock); // DOC: sleeplock1
+      release(lk);
 
-  // Added this line to increment the current process' sleepCount before sched() is invoked
-  p->sleepCount++;
+      // Added this line to increment the current process' sleepCount before sched() is invoked
+      p->sleepCount++;
 
-  // Go to sleep.
-  p->chan = chan;
-  p->state = SLEEPING;
+      // Go to sleep.
+      p->chan = chan;
+      p->state = SLEEPING;
 
-  sched();
+      sched();
 
-  // Tidy up.
-  p->chan = 0;
+      // Tidy up.
+      p->chan = 0;
 
-  // Reacquire original lock.
-  release(&p->lock);
-  acquire(lk);
-}
+      // Reacquire original lock.
+      release(&p->lock);
+      acquire(lk);
+    }
 
-// Wake up all processes sleeping on chan.
-// Must be called without any p->lock.
-void wakeup(void *chan)
-{
-  struct proc *p;
+    // Wake up all processes sleeping on chan.
+    // Must be called without any p->lock.
+    void wakeup(void *chan)
+    {
+      struct proc *p;
 
-  for (p = proc; p < &proc[NPROC]; p++)
-  {
-    if (p != myproc())
+      for (p = proc; p < &proc[NPROC]; p++)
+      {
+        if (p != myproc())
+        {
+          acquire(&p->lock);
+          if (p->state == SLEEPING && p->chan == chan)
+          {
+            p->state = RUNNABLE;
+          }
+          release(&p->lock);
+        }
+      }
+    }
+
+    // Kill the process with the given pid.
+    // The victim won't exit until it tries to return
+    // to user space (see usertrap() in trap.c).
+    int kill(int pid)
+    {
+      struct proc *p;
+
+      for (p = proc; p < &proc[NPROC]; p++)
+      {
+        acquire(&p->lock);
+        if (p->pid == pid)
+        {
+          p->killed = 1;
+          if (p->state == SLEEPING)
+          {
+            // Wake process from sleep().
+            p->state = RUNNABLE;
+          }
+          release(&p->lock);
+          return 0;
+        }
+        release(&p->lock);
+      }
+      return -1;
+    }
+
+    void setkilled(struct proc * p)
     {
       acquire(&p->lock);
-      if (p->state == SLEEPING && p->chan == chan)
-      {
-        p->state = RUNNABLE;
-      }
-      release(&p->lock);
-    }
-  }
-}
-
-// Kill the process with the given pid.
-// The victim won't exit until it tries to return
-// to user space (see usertrap() in trap.c).
-int kill(int pid)
-{
-  struct proc *p;
-
-  for (p = proc; p < &proc[NPROC]; p++)
-  {
-    acquire(&p->lock);
-    if (p->pid == pid)
-    {
       p->killed = 1;
-      if (p->state == SLEEPING)
-      {
-        // Wake process from sleep().
-        p->state = RUNNABLE;
-      }
       release(&p->lock);
-      return 0;
     }
-    release(&p->lock);
-  }
-  return -1;
-}
 
-void setkilled(struct proc *p)
-{
-  acquire(&p->lock);
-  p->killed = 1;
-  release(&p->lock);
-}
+    int killed(struct proc * p)
+    {
+      int k;
 
-int killed(struct proc *p)
-{
-  int k;
+      acquire(&p->lock);
+      k = p->killed;
+      release(&p->lock);
+      return k;
+    }
 
-  acquire(&p->lock);
-  k = p->killed;
-  release(&p->lock);
-  return k;
-}
+    // Copy to either a user address, or kernel address,
+    // depending on usr_dst.
+    // Returns 0 on success, -1 on error.
+    int either_copyout(int user_dst, uint64 dst, void *src, uint64 len)
+    {
+      struct proc *p = myproc();
+      if (user_dst)
+      {
+        return copyout(p->pagetable, dst, src, len);
+      }
+      else
+      {
+        memmove((char *)dst, src, len);
+        return 0;
+      }
+    }
 
-// Copy to either a user address, or kernel address,
-// depending on usr_dst.
-// Returns 0 on success, -1 on error.
-int either_copyout(int user_dst, uint64 dst, void *src, uint64 len)
-{
-  struct proc *p = myproc();
-  if (user_dst)
-  {
-    return copyout(p->pagetable, dst, src, len);
-  }
-  else
-  {
-    memmove((char *)dst, src, len);
-    return 0;
-  }
-}
+    // Copy from either a user address, or kernel address,
+    // depending on usr_src.
+    // Returns 0 on success, -1 on error.
+    int either_copyin(void *dst, int user_src, uint64 src, uint64 len)
+    {
+      struct proc *p = myproc();
+      if (user_src)
+      {
+        return copyin(p->pagetable, dst, src, len);
+      }
+      else
+      {
+        memmove(dst, (char *)src, len);
+        return 0;
+      }
+    }
 
-// Copy from either a user address, or kernel address,
-// depending on usr_src.
-// Returns 0 on success, -1 on error.
-int either_copyin(void *dst, int user_src, uint64 src, uint64 len)
-{
-  struct proc *p = myproc();
-  if (user_src)
-  {
-    return copyin(p->pagetable, dst, src, len);
-  }
-  else
-  {
-    memmove(dst, (char *)src, len);
-    return 0;
-  }
-}
+    // Print a process listing to console.  For debugging.
+    // Runs when user types ^P on console.
+    // No lock to avoid wedging a stuck machine further.
+    void procdump(void)
+    {
+      static char *states[] = {
+          [UNUSED] "unused",
+          [USED] "used",
+          [SLEEPING] "sleep ",
+          [RUNNABLE] "runble",
+          [RUNNING] "run   ",
+          [ZOMBIE] "zombie"};
+      struct proc *p;
+      char *state;
 
-// Print a process listing to console.  For debugging.
-// Runs when user types ^P on console.
-// No lock to avoid wedging a stuck machine further.
-void procdump(void)
-{
-  static char *states[] = {
-      [UNUSED] "unused",
-      [USED] "used",
-      [SLEEPING] "sleep ",
-      [RUNNABLE] "runble",
-      [RUNNING] "run   ",
-      [ZOMBIE] "zombie"};
-  struct proc *p;
-  char *state;
-
-  printf("\n");
-  for (p = proc; p < &proc[NPROC]; p++)
-  {
-    if (p->state == UNUSED)
-      continue;
-    if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
-      state = states[p->state];
-    else
-      state = "???";
-    printf("%d %s %s", p->pid, state, p->name);
-    printf("\n");
-  }
-}
+      printf("\n");
+      for (p = proc; p < &proc[NPROC]; p++)
+      {
+        if (p->state == UNUSED)
+          continue;
+        if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
+          state = states[p->state];
+        else
+          state = "???";
+        printf("%d %s %s", p->pid, state, p->name);
+        printf("\n");
+      }
+    }
