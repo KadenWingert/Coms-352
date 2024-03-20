@@ -773,7 +773,6 @@ void MLFQ_scheduler(struct cpu *c)
   { // each iteration is run every time when the scheduler gains control
 
     // Increment the tick count of p on the current queue
-    // Increment the tick count of p on the current queue
     if (p != 0 && (p->state == RUNNABLE || p->state == RUNNING))
     {
       // Increment tick count of p on the current queue
@@ -782,12 +781,10 @@ void MLFQ_scheduler(struct cpu *c)
       printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
 
       // Check if p’s time quantum for the current queue expires
+      // Check if p’s time quantum for the current queue expires
       if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1))
       {
         printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
-
-        // Reset ticks for the current priority level
-        p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
 
         if (p->mlfqInfo.priority < mlfqParams.m - 1)
         {
@@ -801,6 +798,9 @@ void MLFQ_scheduler(struct cpu *c)
         }
         else
         {
+          // Reset ticks for the current priority level only if the process will remain in the same queue
+          p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
+
           // Remove p from its current queue since it's at the maximum priority
           struct mlfqQueue *currentQueue = &mlfqQueues[p->mlfqInfo.priority];
           mlfq_delete(currentQueue, p);
