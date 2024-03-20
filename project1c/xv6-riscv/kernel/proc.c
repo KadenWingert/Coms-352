@@ -641,28 +641,28 @@ void MLFQ_scheduler(struct cpu *c)
       // Increment tick count of p on the current queue
       p->mlfqInfo.ticks[p->mlfqInfo.priority]++;
       p->mlfqInfo.tickCounts[p->mlfqInfo.priority]++;
-      printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
+      //printf("(In MLFQ_scheduler) Tick count of process %d: %d\n", p->pid, p->mlfqInfo.ticks[p->mlfqInfo.priority]);
 
       // Check if p’s time quantum for the current queue expires
       if (p->mlfqInfo.ticks[p->mlfqInfo.priority] >= 2 * (p->mlfqInfo.priority + 1))
       {
-        printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
+        //printf("(In MLFQ_scheduler) Process %d exceeded its time quantum.\n", p->pid);
 
         if (p->mlfqInfo.priority < mlfqParams.m - 1)
         {
           // Move p to the next lower priority queue
           struct mlfqQueue *lowerQueue = &mlfqQueues[p->mlfqInfo.priority + 1];
           mlfq_enque(lowerQueue, p);
-          printf("(In MLFQ_scheduler) Process %d moved to a lower priority queue.\n", p->pid);
+          //printf("(In MLFQ_scheduler) Process %d moved to a lower priority queue.\n", p->pid);
 
           // Clear the process from its previous queue
           struct mlfqQueue *previousQueue = &mlfqQueues[p->mlfqInfo.priority];
           mlfq_delete(previousQueue, p);
-          printf("(In MLFQ_scheduler) Process %d removed from previous queue.\n", p->pid);
+          //printf("(In MLFQ_scheduler) Process %d removed from previous queue.\n", p->pid);
 
           // Reset ticks for the current priority level
           p->mlfqInfo.ticks[p->mlfqInfo.priority] = 0;
-          printf("(In MLFQ_scheduler) Reset tick count for process %d at priority %d.\n", p->pid, p->mlfqInfo.priority);
+          //printf("(In MLFQ_scheduler) Reset tick count for process %d at priority %d.\n", p->pid, p->mlfqInfo.priority);
 
           // Increment the priority
           p->mlfqInfo.priority++;
@@ -696,24 +696,24 @@ void MLFQ_scheduler(struct cpu *c)
           temp->proc->mlfqInfo.ticksAtMaxPriority++;
           temp->proc->mlfqInfo.tickCounts[temp->proc->mlfqInfo.priority]++;
 
-        printf("IN RULE 5 LOGIC...");
-        printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
+       // printf("IN RULE 5 LOGIC...");
+       // printf("(In MLFQ_scheduler) Process %d: Tick count at max priority: %d\n", temp->proc->pid, temp->proc->mlfqInfo.ticksAtMaxPriority);
         if (temp->proc->mlfqInfo.ticksAtMaxPriority >= mlfqParams.n)
         {
-          printf("(In MLFQ_scheduler) Moving process %d to the top queue\n", temp->proc->pid);
+          //printf("(In MLFQ_scheduler) Moving process %d to the top queue\n", temp->proc->pid);
           // Move the process to the top queue
           struct mlfqQueue *topQueue = &mlfqQueues[0];
           mlfq_enque(topQueue, temp->proc);
           // Remove the process from the bottom queue
-          printf("(In MLFQ_scheduler) Removing process %d from the bottom queue\n", temp->proc->pid);
+          //printf("(In MLFQ_scheduler) Removing process %d from the bottom queue\n", temp->proc->pid);
           mlfq_delete(lastQueue, temp->proc);
           // Reset tick count at max priority level
           temp->proc->mlfqInfo.ticksAtMaxPriority = 0;
           temp->proc->mlfqInfo.ticks[temp->proc->mlfqInfo.priority] = 0; // Reset tick count for the current priority level
           // Adjust priority
-          printf("(In MLFQ_scheduler) Process %d's original priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
+          //printf("(In MLFQ_scheduler) Process %d's original priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
           temp->proc->mlfqInfo.priority = 0;
-          printf("(In MLFQ_scheduler) Process %d's new priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
+          //printf("(In MLFQ_scheduler) Process %d's new priority is %d\n", temp->proc->pid, temp->proc->mlfqInfo.priority);
           temp->proc->mlfqInfo.ticks[temp->proc->mlfqInfo.priority] = 0; // Reset tick count for the current priority level
         }
       }
@@ -728,7 +728,7 @@ void MLFQ_scheduler(struct cpu *c)
         struct mlfqQueue *queue = &mlfqQueues[0];
         mlfq_enque(queue, &proc[i]);
         proc[i].mlfqInfo.addedToMLFQ = 1;
-        printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
+        //printf("(In MLFQ_scheduler) Process %d added to queue 0.\n", proc[i].pid);
       }
     }
 if(p == 0){
@@ -757,11 +757,11 @@ if(p == 0){
     }
 
     // Debug: Print information about processes and their states
-    printf("(In MLFQ_scheduler) Processes with highest priority. The highest priority is:  %d\n", highest_priority);
-    for (int i = 0; i < num_procs_highest_priority; i++)
-    {
-      printf("(In MLFQ_scheduler) Process %d, priority=%d\n", procs_with_highest_priority[i]->pid, procs_with_highest_priority[i]->mlfqInfo.priority);
-    }
+    // printf("(In MLFQ_scheduler) Processes with highest priority. The highest priority is:  %d\n", highest_priority);
+    // for (int i = 0; i < num_procs_highest_priority; i++)
+    // {
+    //   printf("(In MLFQ_scheduler) Process %d, priority=%d\n", procs_with_highest_priority[i]->pid, procs_with_highest_priority[i]->mlfqInfo.priority);
+    // }
     // If there are multiple processes with the highest priority, select based on Round-Robin
     if (num_procs_highest_priority > 1)
     {
@@ -769,12 +769,12 @@ if(p == 0){
       selected_proc = procs_with_highest_priority[rr_index];
       rr_index = (rr_index + 1 ) % num_procs_highest_priority; // Move to the next process for the next time
 
-      printf("(In MLFQ_scheduler) Multiple processes with highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
+      //printf("(In MLFQ_scheduler) Multiple processes with highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
     }
     else if (num_procs_highest_priority == 1)
     {
       selected_proc = procs_with_highest_priority[0]; // If only one process with the highest priority, select it
-      printf("(In MLFQ_scheduler) There is only one process with the highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
+      //printf("(In MLFQ_scheduler) There is only one process with the highest priority. Selected process: pid=%d, priority=%d\n", selected_proc->pid, selected_proc->mlfqInfo.priority);
     }
 
     p = selected_proc; // Assign the selected process to p
@@ -803,11 +803,11 @@ if(p == 0){
 
       argint(1, &n);
 
-      printf("The value of m is: %d\n", m);
+      //printf("The value of m is: %d\n", m);
       // Check if MLFQ scheduler is already running
       if (mlfqFlag)
       {
-        printf("(startMLFQ) MLFQ scheduler is already running\n");
+        //printf("(startMLFQ) MLFQ scheduler is already running\n");
         return -1; // MLFQ scheduler is already running
       }
 
@@ -816,7 +816,7 @@ if(p == 0){
       mlfqParams.m = m; // number of priority levels
       mlfqParams.n = n; // maximum ticks at priority m-1 before boosting to 0
 
-      printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
+      //printf("(startMLFQ) MLFQ scheduler started with m = %d, n = %d\n", m, n);
 
       for (int i = 0; i < MLFQ_MAX_LEVEL; i++)
       {
@@ -832,7 +832,7 @@ if(p == 0){
       // Check if MLFQ scheduler is not running
       if (!mlfqFlag)
       {
-        printf("(stopMLFQ) MLFQ scheduler is not running\n");
+        //printf("(stopMLFQ) MLFQ scheduler is not running\n");
         return -1; // MLFQ scheduler is not running
       }
       // Stop MLFQ scheduler
@@ -851,11 +851,11 @@ if(p == 0){
       // Copy the updated MLFQInfoReport structure back to user space
       if (copyout(myproc()->pagetable, arg_addr, (char *)&(myproc()->mlfqInfo), sizeof(struct MLFQInfoReport)) < 0)
       {
-        printf("(getMLFQInfo) Failed to copy updated report structure to user space\n");
+        //printf("(getMLFQInfo) Failed to copy updated report structure to user space\n");
         return -1;
       }
 
-      printf("(getMLFQInfo) Successfully updated and copied report structure to user space\n");
+     //printf("(getMLFQInfo) Successfully updated and copied report structure to user space\n");
       return 0; // Success
     }
 
